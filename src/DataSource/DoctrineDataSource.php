@@ -13,7 +13,6 @@ use Doctrine\ORM\QueryBuilder;
 use Doctrine\ORM\Tools\Pagination\Paginator;
 use Nette\Utils\Strings;
 use Ublaboo\DataGrid\AggregationFunction\IAggregatable;
-use Ublaboo\DataGrid\Exception\DataGridDateTimeHelperException;
 use Ublaboo\DataGrid\Filter;
 use Ublaboo\DataGrid\Utils\DateTimeHelper;
 use Ublaboo\DataGrid\Utils\Sorting;
@@ -38,7 +37,12 @@ class DoctrineDataSource extends FilterableDataSource implements IDataSource, IA
 	 * @var string
 	 */
 	protected $primary_key;
-
+        
+	/**
+	 * @var string
+	 */
+	protected $native_paginator;
+        
 	/**
 	 * @var string
 	 */
@@ -95,7 +99,11 @@ class DoctrineDataSource extends FilterableDataSource implements IDataSource, IA
 	 */
 	private function usePaginator()
 	{
-		return $this->data_source->getDQLPart('join') || $this->data_source->getDQLPart('groupBy');
+            if($this->native_paginator === false) {
+                return false;
+            }
+            
+            return $this->data_source->getDQLPart('join') || $this->data_source->getDQLPart('groupBy');
 	}
 
 
@@ -171,20 +179,23 @@ class DoctrineDataSource extends FilterableDataSource implements IDataSource, IA
 		$p2 = $this->getPlaceholder();
 
 		foreach ($filter->getCondition() as $column => $value) {
-			try {
-				$date = DateTimeHelper::tryConvertToDateTime($value, [$filter->getPhpFormat()]);
-				$c = $this->checkAliases($column);
+			$date = DateTimeHelper::tryConvertToDateTime($value, [$filter->getPhpFormat()]);
+			$c = $this->checkAliases($column);
 
-				$this->data_source->andWhere("$c >= :$p1 AND $c <= :$p2")
-					->setParameter($p1, $date->format('Y-m-d 00:00:00'))
-					->setParameter($p2, $date->format('Y-m-d 23:59:59'));
-			} catch (DataGridDateTimeHelperException $ex) {
-				// ignore the invalid filter value
-			}
+			$this->data_source->andWhere("$c >= :$p1 AND $c <= :$p2")
+				->setParameter($p1, $date->format('Y-m-d 00:00:00'))
+				->setParameter($p2, $date->format('Y-m-d 23:59:59'));
 		}
 	}
 
 
+        public function switchNativatePaginator($m) 
+        {
+            $this->native_paginator = $m;
+            
+            return $this;
+       }
+        
 	/**
 	 * Filter by date range
 	 * @param Filter\FilterDateRange  $filter
@@ -198,29 +209,21 @@ class DoctrineDataSource extends FilterableDataSource implements IDataSource, IA
 		$value_to = $conditions[$filter->getColumn()]['to'];
 
 		if ($value_from) {
-			try {
-				$date_from = DateTimeHelper::tryConvertToDate($value_from, [$filter->getPhpFormat()]);
-				$date_from->setTime(0, 0, 0);
+			$date_from = DateTimeHelper::tryConvertToDate($value_from, [$filter->getPhpFormat()]);
+			$date_from->setTime(0, 0, 0);
 
-				$p = $this->getPlaceholder();
+			$p = $this->getPlaceholder();
 
-				$this->data_source->andWhere("$c >= :$p")->setParameter($p, $date_from->format('Y-m-d H:i:s'));
-			} catch (DataGridDateTimeHelperException $ex) {
-				// ignore the invalid filter value
-			}
+			$this->data_source->andWhere("$c >= :$p")->setParameter($p, $date_from->format('Y-m-d H:i:s'));
 		}
 
 		if ($value_to) {
-			try {
-				$date_to = DateTimeHelper::tryConvertToDate($value_to, [$filter->getPhpFormat()]);
-				$date_to->setTime(23, 59, 59);
+			$date_to = DateTimeHelper::tryConvertToDate($value_to, [$filter->getPhpFormat()]);
+			$date_to->setTime(23, 59, 59);
 
-				$p = $this->getPlaceholder();
+			$p = $this->getPlaceholder();
 
-				$this->data_source->andWhere("$c <= :$p")->setParameter($p, $date_to->format('Y-m-d H:i:s'));
-			} catch (DataGridDateTimeHelperException $ex) {
-				// ignore the invalid filter value
-			}
+			$this->data_source->andWhere("$c <= :$p")->setParameter($p, $date_to->format('Y-m-d H:i:s'));
 		}
 	}
 

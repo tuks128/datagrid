@@ -620,7 +620,18 @@ class DataGrid extends Nette\Application\UI\Control
 
 		return $this;
 	}
+        
+        public function switchNativateSourcePaginator($m)
+        {
+            if(!$this->dataModel) {
+               throw new \BadFunctionCallException('Before call this function first call \'setDataSource\'.');
+            }
+            else if(!method_exists($this->dataModel->getDataSource(), 'switchNativatePaginator')) {
+                throw new \BadFunctionCallException('The data model doesn\'t yet implemented method: \'switchNativatePaginator\'.');
+            }
 
+            $this->dataModel->getDataSource()->switchNativatePaginator($m);
+        }
 
 	/**
 	 * @return DataSource\IDataSource|NULL
@@ -2779,12 +2790,12 @@ class DataGrid extends Nette\Application\UI\Control
 	 */
 	public function getPerPage()
 	{
-		$items_per_page_list = array_keys($this->getItemsPerPageList());
+		$items_per_page_list = $this->getItemsPerPageList();
 
 		$per_page = $this->per_page ?: reset($items_per_page_list);
 
 		if (($per_page !== 'all' && !in_array((int) $this->per_page, $items_per_page_list, true))
-			|| ($per_page === 'all' && !array_key_exists($this->per_page, $items_per_page_list))) {
+			|| ($per_page === 'all' && !in_array($this->per_page, $items_per_page_list, true))) {
 			$per_page = reset($items_per_page_list);
 		}
 

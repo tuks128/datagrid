@@ -1,10 +1,10 @@
 {
-  "name": "ublaboo-datagrid",
+  "name": "tuks128-ublaboo-datagrid",
   "homepage": "https://github.com/ublaboo/datagrid",
   "authors": [
     "Pavel Janda <me@paveljanda.com>"
   ],
-  "description": "Assets for php package ublaboo/datagrid",
+  "description": "Assets for php package tuks128/datagrid",
   "main": [
     "./assets/dist/datagrid.js",
     "./assets/dist/datagrid.css"
