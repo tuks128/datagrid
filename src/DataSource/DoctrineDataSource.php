@@ -121,9 +121,11 @@ class DoctrineDataSource extends FilterableDataSource implements IDataSource, IA
 		if ($this->usePaginator()) {
 			return (new Paginator($this->getQuery()))->count();
 		}
+                
 		$data_source = clone $this->data_source;
 		$data_source->select(sprintf('COUNT(%s)', $this->checkAliases($this->primary_key)));
 		$data_source->resetDQLPart('orderBy');
+                $data_source->resetDQLPart('join');
 
 		return (int) $data_source->getQuery()->getSingleScalarResult();
 	}
